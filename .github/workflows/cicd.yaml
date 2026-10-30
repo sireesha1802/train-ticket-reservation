@@ -1,3 +1,4 @@
+
 name: Multi Environment CI-CD Pipeline
 
 on:
@@ -97,8 +98,59 @@ jobs:
              sudo systemctl start '$TOMCAT_SERVICE' &&
              rm -f /tmp/$APP_NAME.war"
 
-      - name: Verify DEV
+  # =================================
+  # STAGE 3: TEST - APPROVAL
+  # =================================
+
+  deploy-test:
+    name: Deploy TEST
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+
+    environment:
+      name: test
+
+    env:
+      TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+      TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+      TOMCAT_WEBAPPS: ${{ vars.TOMCAT_WEBAPPS }}
+      TOMCAT_SERVICE: ${{ vars.TOMCAT_SERVICE }}
+      APP_URL: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: application-war
+          path: ./artifact
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy WAR to TEST
+        run: |
+          scp -i ~/.ssh/id_rsa \
+            ./artifact/*.war \
+            "$TOMCAT_USER@$TOMCAT_HOST:/tmp/$APP_NAME.war"
+
+      - name: Deploy TEST
         run: |
           ssh -i ~/.ssh/id_rsa "$TOMCAT_USER@$TOMCAT_HOST" \
-            "sudo systemctl is-active '$TOMCAT_SERVICE'"
-          curl --fail --retry 12 --retry-delay 5 "$APP_URL"
+            "sudo systemctl stop '$TOMCAT_SERVICE' &&
+             if [ -f '$TOMCAT_WEBAPPS/$APP_NAME.war' ]; then
+               sudo cp '$TOMCAT_WEBAPPS/$APP_NAME.war' \
+                 '$TOMCAT_WEBAPPS/$APP_NAME.war.backup';
+             fi &&
+             sudo install -m 0644 /tmp/$APP_NAME.war \
+               '$TOMCAT_WEBAPPS/$APP_NAME.war' &&
+             sudo systemctl start '$TOMCAT_SERVICE' &&
+             rm -f /tmp/$APP_NAME.war"
