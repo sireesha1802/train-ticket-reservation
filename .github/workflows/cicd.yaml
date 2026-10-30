@@ -5,7 +5,7 @@ on:
     branches:
       - main
 
-  env:
+env:
   APP_NAME: myapp
 
 jobs:
