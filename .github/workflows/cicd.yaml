@@ -127,7 +127,7 @@ jobs:
       - name: Configure SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS_TEST }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -143,6 +143,121 @@ jobs:
             "$TOMCAT_USER@$TOMCAT_HOST:/tmp/$APP_NAME.war"
 
       - name: Deploy TEST
+        run: |
+          ssh -i ~/.ssh/id_rsa "$TOMCAT_USER@$TOMCAT_HOST" \
+            "sudo systemctl stop '$TOMCAT_SERVICE' &&
+             if [ -f '$TOMCAT_WEBAPPS/$APP_NAME.war' ]; then
+               sudo cp '$TOMCAT_WEBAPPS/$APP_NAME.war' \
+                 '$TOMCAT_WEBAPPS/$APP_NAME.war.backup';
+             fi &&
+             sudo install -m 0644 /tmp/$APP_NAME.war \
+               '$TOMCAT_WEBAPPS/$APP_NAME.war' &&
+             sudo systemctl start '$TOMCAT_SERVICE' &&
+             rm -f /tmp/$APP_NAME.war"
+
+# =================================
+  # STAGE 4: PRE PROD - APPROVAL
+  # =================================
+
+  deploy-pre-prod:
+    name: Deploy PRE-PROD
+    needs: deploy-test
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pre-prod
+
+    env:
+      TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+      TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+      TOMCAT_WEBAPPS: ${{ vars.TOMCAT_WEBAPPS }}
+      TOMCAT_SERVICE: ${{ vars.TOMCAT_SERVICE }}
+      APP_URL: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: application-war
+          path: ./artifact
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy WAR to PRE-PROD
+        run: |
+          scp -i ~/.ssh/id_rsa \
+            ./artifact/*.war \
+            "$TOMCAT_USER@$TOMCAT_HOST:/tmp/$APP_NAME.war"
+
+      - name: Deploy PRE-PROD
+        run: |
+          ssh -i ~/.ssh/id_rsa "$TOMCAT_USER@$TOMCAT_HOST" \
+            "sudo systemctl stop '$TOMCAT_SERVICE' &&
+             if [ -f '$TOMCAT_WEBAPPS/$APP_NAME.war' ]; then
+               sudo cp '$TOMCAT_WEBAPPS/$APP_NAME.war' \
+                 '$TOMCAT_WEBAPPS/$APP_NAME.war.backup';
+             fi &&
+             sudo install -m 0644 /tmp/$APP_NAME.war \
+               '$TOMCAT_WEBAPPS/$APP_NAME.war' &&
+             sudo systemctl start '$TOMCAT_SERVICE' &&
+             rm -f /tmp/$APP_NAME.war"
+
+# =================================
+  # STAGE 5: PROD - APPROVAL
+  # =================================
+
+  deploy-Prod:
+    name: Deploy PROD
+    needs: deploy-pre-prod
+    runs-on: ubuntu-latest
+
+  
+    environment:
+      name: prod
+
+    env:
+      TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+      TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+      TOMCAT_WEBAPPS: ${{ vars.TOMCAT_WEBAPPS }}
+      TOMCAT_SERVICE: ${{ vars.TOMCAT_SERVICE }}
+      APP_URL: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: application-war
+          path: ./artifact
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy WAR to PROD
+        run: |
+          scp -i ~/.ssh/id_rsa \
+            ./artifact/*.war \
+            "$TOMCAT_USER@$TOMCAT_HOST:/tmp/$APP_NAME.war"
+
+      - name: Deploy PROD
         run: |
           ssh -i ~/.ssh/id_rsa "$TOMCAT_USER@$TOMCAT_HOST" \
             "sudo systemctl stop '$TOMCAT_SERVICE' &&
