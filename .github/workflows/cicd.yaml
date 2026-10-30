@@ -1,0 +1,112 @@
+
+name: EC2 SSH Connectivity Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  ssh-connectivity:
+    name: Test EC2 SSH Connection
+    runs-on: ubuntu-latest
+
+    environment: dev
+
+    steps:
+
+      # STEP 1: Checkout repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # STEP 2: Configure SSH
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+
+          chmod 600 ~/.ssh/id_ed25519
+
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          chmod 600 ~/.ssh/known_hosts
+
+      # STEP 3: Validate SSH Configuration
+      - name: Validate SSH Configuration
+        run: |
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
+
+          echo "SSH private key format is valid"
+
+          ssh-keygen -lf ~/.ssh/known_hosts
+
+      # STEP 4: Test SSH Connection
+      - name: Test SSH Connection
+        env:
+          TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+          TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+
+        run: |
+          echo "Connecting to Tomcat server..."
+
+          ssh -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            "$TOMCAT_USER@$TOMCAT_HOST" \
+            "hostname && whoami"
+
+      # STEP 5: Check Operating System
+      - name: Check EC2 Operating System
+        env:
+          TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+          TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            "$TOMCAT_USER@$TOMCAT_HOST" \
+            "cat /etc/os-release"
+
+      # STEP 6: Check Tomcat Service
+      - name: Check Tomcat Service
+        env:
+          TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+          TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+          TOMCAT_SERVICE: ${{ vars.TOMCAT_SERVICE }}
+
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            "$TOMCAT_USER@$TOMCAT_HOST" \
+            "systemctl is-active '$TOMCAT_SERVICE'"
+
+      # STEP 7: Check Tomcat Port
+      - name: Check Tomcat Port
+        env:
+          TOMCAT_HOST: ${{ vars.TOMCAT_HOST }}
+          TOMCAT_USER: ${{ vars.TOMCAT_USER }}
+
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=yes \
+            "$TOMCAT_USER@$TOMCAT_HOST" \
+            "sudo ss -lntp | grep ':8080'"
+
+      # STEP 8: Deployment Environment Summary
+      - name: Connection Summary
+        run: |
+          echo "================================"
+          echo "SSH CONNECTIVITY TEST SUCCESSFUL"
+          echo "================================"
+          echo "EC2 SSH authentication successful"
+          echo "Tomcat service is active"
+          echo "Tomcat port check completed"
