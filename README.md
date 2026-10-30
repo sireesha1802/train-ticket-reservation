@@ -302,72 +302,72 @@ curl --fail --show-error http://YOUR_HOST:8080/myapp/
 A successful HTTP response confirms the endpoint responded. Also inspect
 Tomcat logs if deployment or application startup fails.
 
-## 8. Screenshots and deployment evidence
+## 8. images and deployment evidence
 
-The screenshots below are **evidence placeholders**. Replace them with
-actual screenshots from your GitHub Actions runs and GitHub Environment
-approval pages. No live GitHub screenshots were supplied when this
-README was created, so no screenshots are represented as actual
+The images below are **evidence placeholders**. Replace them with
+actual images from your GitHub Actions runs and GitHub Environment
+approval pages. No live GitHub images were supplied when this
+README was created, so no images are represented as actual
 deployment evidence.
 
-Create a `screenshots/` directory beside this README and save the
-screenshots using these filenames.
+Create a `images/` directory beside this README and save the
+images using these filenames.
 
 ### 8.1 GitHub approval pending\
 
 
 
-**File:** `screenshots/approval-pending.png`
+**File:** `images/approval-pending.png`
 
 Capture the GitHub Actions deployment job waiting for approval for TEST,
 PREPROD or PROD.
 
-![Approval pending screenshot](screenshots/Approval_pending.png)
+![Approval pending screenshot](images/Approval_pending.png)
 
 ### 8.2 GitHub approval granted
 
-**File:** `screenshots/approval-approved.png`
+**File:** `images/approval-approved.png`
 
 Capture the GitHub Actions deployment job after an authorized reviewer
 approves the deployment.
 
-![Approval approved screenshot](screenshots/Complete_pipeline.png)
+![Approval approved screenshot](images/Complete_pipeline.png)
 
 ### 8.3 DEV deployment output
 
-**File:** `screenshots/dev-deployment.png`
+**File:** `images/dev-deployment.png`
 
 Capture the DEV deployment job showing artifact download, SSH/SCP
 deployment and successful health check.
 
-![DEV deployment screenshot](screenshots/Dev.png)
+![DEV deployment screenshot](images/Dev.png)
 
 ### 8.4 TEST deployment output
 
-**File:** `screenshots/test-deployment.png`
+**File:** `images/test-deployment.png`
 
 Capture the TEST deployment job after approval and successful
 deployment.
 
-![TEST deployment screenshot](screenshots/test.png)
+![TEST deployment screenshot](images/test.png)
 
 ### 8.5 PREPROD deployment output
 
-**File:** `screenshots/preprod-deployment.png`
+**File:** `images/preprod-deployment.png`
 
 Capture the PREPROD deployment job after approval and successful
 deployment.
 
-![PREPROD deployment screenshot](screenshots/pre-prod.png)
+![PREPROD deployment screenshot](images/pre-prod.png)
 
 ### 8.6 PROD deployment output
 
-**File:** `screenshots/prod-deployment.png`
+**File:** `images/prod-deployment.png`
 
 Capture the PROD deployment job after approval and successful
 deployment.
 
-![PROD deployment screenshot](screenshots/prod.png)
+![PROD deployment screenshot](images/prod.png)
 
 ## 9. Operational checklist
 
@@ -415,6 +415,6 @@ deployment.
 
 **Document status:** Deployment procedure and evidence template.
 
-**Evidence status:** Actual approval and environment screenshots must be
+**Evidence status:** Actual approval and environment images must be
 added after running the pipeline.
 
